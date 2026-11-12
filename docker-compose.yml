@@ -1,0 +1,143 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: sv-mysql
+    restart: always
+    environment:
+      # 口令一律由宿主机环境变量注入，默认值仅为本地演示占位
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme}
+      MYSQL_DATABASE: ${SV_MYSQL_DATABASE:-travel_rag}
+      MYSQL_USER: ${SV_MYSQL_USER:-smart_yoyage}
+      MYSQL_PASSWORD: ${SV_MYSQL_PASSWORD:-changeme}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./SmartVoyage/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [smart-voyage-net]
+
+  ticket-mcp:
+    image: smart-voyage:latest
+    container_name: sv-ticket-mcp
+    command: ["ticket_mcp"]
+    environment: &common_env
+      SERVICE_NAME: ticket_mcp
+      PORT: 8001
+      HOST: 0.0.0.0
+      MYSQL_HOST: mysql
+      MYSQL_USER: ${SV_MYSQL_USER:-smart_yoyage}
+      MYSQL_PASSWORD: ${SV_MYSQL_PASSWORD:-changeme}
+      MYSQL_DATABASE: ${SV_MYSQL_DATABASE:-travel_rag}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME:-qwen3.6-plus}
+    ports: ["8001:8001"]
+    depends_on:
+      mysql: { condition: service_healthy }
+    networks: [smart-voyage-net]
+
+  weather-mcp:
+    image: smart-voyage:latest
+    container_name: sv-weather-mcp
+    command: ["weather_mcp"]
+    environment:
+      <<: *common_env
+      SERVICE_NAME: weather_mcp
+      PORT: 8002
+      WEATHER_MCP_PORT: 8002
+      WEATHER_SOURCE: ${WEATHER_SOURCE:-database}
+      HEFENG_WEATHER_API_KEY: ${HEFENG_WEATHER_API_KEY:-}
+      HEFENG_API_HOST: ${HEFENG_API_HOST:-}
+    ports: ["8002:8002"]
+    depends_on:
+      mysql: { condition: service_healthy }
+    networks: [smart-voyage-net]
+
+  trip-mcp:
+    image: smart-voyage:latest
+    container_name: sv-trip-mcp
+    command: ["trip_mcp"]
+    environment:
+      <<: *common_env
+      SERVICE_NAME: trip_mcp
+      PORT: 8003
+      TRIP_MCP_PORT: 8003
+      MILVUS_HOST: ${MILVUS_HOST:-milvus}
+      MILVUS_PORT: ${MILVUS_PORT:-19530}
+    ports: ["8003:8003"]
+    depends_on:
+      mysql: { condition: service_healthy }
+    networks: [smart-voyage-net]
+
+  weather-a2a:
+    image: smart-voyage:latest
+    container_name: sv-weather-a2a
+    command: ["weather_a2a"]
+    environment:
+      <<: *common_env
+      SERVICE_NAME: weather_a2a
+      PORT: 5005
+      WEATHER_A2A_PORT: 5005
+      WEATHER_MCP_URL: http://weather-mcp:8002/mcp
+    ports: ["5005:5005"]
+    depends_on: [weather-mcp]
+    networks: [smart-voyage-net]
+
+  ticket-a2a:
+    image: smart-voyage:latest
+    container_name: sv-ticket-a2a
+    command: ["ticket_a2a"]
+    environment:
+      <<: *common_env
+      SERVICE_NAME: ticket_a2a
+      PORT: 5006
+      TICKET_A2A_PORT: 5006
+      TICKET_MCP_URL: http://ticket-mcp:8001/mcp
+    ports: ["5006:5006"]
+    depends_on: [ticket-mcp]
+    networks: [smart-voyage-net]
+
+  trip-a2a:
+    image: smart-voyage:latest
+    container_name: sv-trip-a2a
+    command: ["trip_a2a"]
+    environment:
+      <<: *common_env
+      SERVICE_NAME: trip_a2a
+      PORT: 5007
+      TRIP_A2A_PORT: 5007
+      TRIP_MCP_URL: http://trip-mcp:8003/mcp
+    ports: ["5007:5007"]
+    depends_on: [trip-mcp]
+    networks: [smart-voyage-net]
+
+  api-server:
+    image: smart-voyage:latest
+    container_name: sv-api-server
+    command: ["api_server"]
+    environment:
+      <<: *common_env
+      SERVICE_NAME: api_server
+      PORT: 8080
+      API_PORT: 8080
+      WEATHER_A2A_URL: http://weather-a2a:5005
+      TICKET_A2A_URL: http://ticket-a2a:5006
+      TRIP_A2A_URL: http://trip-a2a:5007
+      WEATHER_MCP_URL: http://weather-mcp:8002/mcp
+      TICKET_MCP_URL: http://ticket-mcp:8001/mcp
+      TRIP_MCP_URL: http://trip-mcp:8003/mcp
+    ports: ["8080:8080"]
+    depends_on: [mysql, weather-a2a, ticket-a2a, trip-a2a]
+    networks: [smart-voyage-net]
+
+volumes:
+  mysql_data:
+
+networks:
+  smart-voyage-net:
+    driver: bridge

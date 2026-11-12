@@ -1,0 +1,18 @@
+# SmartVoyage 运行依赖（Python 3.12.11）
+# 与课件 requirements.txt 版本保持一致，仅列出项目直接依赖
+langchain==0.3.26
+langchain-core==0.3.72
+langchain-openai==0.3.28
+langchain-mcp-adapters==0.1.11
+mcp==1.18.0
+python-a2a==0.5.4
+mysql-connector-python==9.4.0
+fastapi==0.116.1
+uvicorn==0.35.0
+streamlit==1.47.1
+requests==2.32.4
+schedule==1.2.2
+pytz==2025.2
+colorlog==6.9.0
+python-dotenv==1.1.1
+pydantic==2.11.7

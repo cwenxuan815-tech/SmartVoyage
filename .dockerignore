@@ -1,0 +1,12 @@
+项目参考资料/
+.workbuddy/
+.git/
+logs/
+data/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.venv/
+venv/

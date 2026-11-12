@@ -1,0 +1,8 @@
+# 统一换行符：Windows 下 core.autocrlf=true 时，脚本若被转成 CRLF 会在 Linux 容器内执行失败
+* text=auto
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.sql text eol=lf
+*.md text eol=lf

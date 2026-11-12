@@ -1,0 +1,74 @@
+# ============================================================
+# SmartVoyage .gitignore
+# 原则：密钥、日志、运行产物、本机缓存一律不入库；
+#       只提交源码、SQL 脚本、前端页面、容器编排与文档。
+# ============================================================
+
+# ---------- 密钥与本机配置 ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets/
+credentials/
+
+# ---------- 日志 ----------
+logs/
+*.log
+*.log.*
+
+# ---------- 数据与运行产物 ----------
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/eval_results/
+data/output/
+data/tmp/
+
+# ---------- Docker 镜像导出包 / 压缩包 ----------
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+ENV/
+
+# ---------- 测试与检查工具缓存 ----------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ---------- 编辑器与操作系统 ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 本仓库特有的本地资料 ----------
+# 教学课件/备课笔记（第三方课程资料，含大量图片，约 29MB，不适合开源分发）
+项目参考资料/
+# 本地工作区数据（会话记忆、临时提取脚本），不参与开源
+.workbuddy/
